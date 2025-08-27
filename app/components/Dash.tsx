@@ -457,7 +457,7 @@ export default function Dash({ playerAddress }: DashProps) {
     let currentMultiplier = 1.0;
     
     aviatorIntervalRef.current = setInterval(() => {
-      currentMultiplier += 0.1;
+      currentMultiplier += 0.01;
       setAviatorMultiplier(currentMultiplier);
       
       if (currentMultiplier >= crashPoint) {
