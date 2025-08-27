@@ -17,8 +17,8 @@ export const GAME_CONFIG = {
   
   // Game metadata
   METADATA: {
-    name: 'Example Game',
-      url: 'https://nadmetrydash.vercel.app/',
+    name: 'Idle Empire',
+    url: 'https://nadmetrydash.vercel.app/',
     image: 'https://picsum.photos/536/354'
   }
 } as const;
