@@ -160,7 +160,7 @@ export default function Dash({ playerAddress }: DashProps) {
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setGameState(prevState => {
-        let newState = { ...prevState };
+        const newState = { ...prevState };
         
         // Calculate auto income
         const autoIncome = prevState.autoClickers.reduce((total, clicker) => {
