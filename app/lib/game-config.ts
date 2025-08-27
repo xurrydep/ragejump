@@ -1,7 +1,7 @@
 // Game configuration
 export const GAME_CONFIG = {
   // Your registered game address
-  GAME_ADDRESS: '0x3523cd0efcec61fcb76146099fed585bfcc5bee5',
+  GAME_ADDRESS: '0x260a867f461a8142d44defe0fecf143ed3937386',
   
   // Monad Games ID for leaderboard integration
   MONAD_GAMES_ID: 'cmd8euall0037le0my79qpz42',
@@ -18,7 +18,7 @@ export const GAME_CONFIG = {
   // Game metadata
   METADATA: {
     name: 'Idle Empire',
-    url: 'https://nadmetrydash.vercel.app/',
+    url: 'https://clickempire.vercel.app/',
     image: 'https://picsum.photos/536/354'
   }
 } as const;

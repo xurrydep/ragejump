@@ -452,8 +452,26 @@ export default function Dash({ playerAddress }: DashProps) {
       }
     }));
     
-    // Start the flight
-    const crashPoint = Math.random() * 9 + 1; // Random between 1x and 10x
+    // Start the flight with weighted probability favoring lower multipliers
+    // 60% chance to crash between 1.00x-1.50x
+    // 25% chance to crash between 1.50x-2.00x  
+    // 10% chance to crash between 2.00x-2.50x
+    // 4% chance to crash between 2.50x-3.00x
+    // 1% chance to crash between 3.00x-4.00x
+    const rand = Math.random();
+    let crashPoint;
+    
+    if (rand < 0.6) {
+      crashPoint = 1.0 + Math.random() * 0.5; // 1.00x - 1.50x
+    } else if (rand < 0.85) {
+      crashPoint = 1.5 + Math.random() * 0.5; // 1.50x - 2.00x
+    } else if (rand < 0.95) {
+      crashPoint = 2.0 + Math.random() * 0.5; // 2.00x - 2.50x
+    } else if (rand < 0.99) {
+      crashPoint = 2.5 + Math.random() * 0.5; // 2.50x - 3.00x
+    } else {
+      crashPoint = 3.0 + Math.random() * 1.0; // 3.00x - 4.00x (very rare)
+    }
     let currentMultiplier = 1.0;
     
     aviatorIntervalRef.current = setInterval(() => {
@@ -680,7 +698,7 @@ export default function Dash({ playerAddress }: DashProps) {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent animate-pulse">
+          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
             🏭 CLICKER EMPIRE 🏭
           </h1>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
