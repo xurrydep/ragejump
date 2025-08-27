@@ -19,7 +19,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Hero Section */}
           <div className="text-center mb-12">
-            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent animate-pulse">
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
               🏭 CLICKER EMPIRE 🏭
             </h1>
             <p className="text-cyan-300 text-xl mb-8">

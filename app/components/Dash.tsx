@@ -91,7 +91,10 @@ export default function Dash({ playerAddress }: DashProps) {
     boosters: [
       { id: 'click2x', name: 'Click Frenzy', icon: '⚡', duration: 30, multiplier: 2, price: 100, active: false, timeLeft: 0 },
       { id: 'auto2x', name: 'Auto Boost', icon: '🚀', duration: 60, multiplier: 2, price: 500, active: false, timeLeft: 0 },
-      { id: 'mega5x', name: 'Mega Boost', icon: '💥', duration: 15, multiplier: 5, price: 2000, active: false, timeLeft: 0 }
+      { id: 'mega5x', name: 'Mega Boost', icon: '💥', duration: 15, multiplier: 5, price: 2000, active: false, timeLeft: 0 },
+      { id: 'tornado10x', name: 'Tornado Boost', icon: '🌪️', duration: 10, multiplier: 10, price: 10000, active: false, timeLeft: 0 },
+      { id: 'cosmic25x', name: 'Cosmic Storm', icon: '🌌', duration: 20, multiplier: 25, price: 5000000, active: false, timeLeft: 0 },
+      { id: 'godmode50x', name: 'God Mode', icon: '👑', duration: 30, multiplier: 50, price: 100000000, active: false, timeLeft: 0 }
     ],
     activeBoosters: [],
     story: {
@@ -108,7 +111,7 @@ export default function Dash({ playerAddress }: DashProps) {
   const [highScore, setHighScore] = useState(0);
   const [isSavingScore, setIsSavingScore] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
-  const [currentTab, setCurrentTab] = useState<'main' | 'shop' | 'upgrades' | 'story' | 'lucky'>('main');
+  const [currentTab, setCurrentTab] = useState<'main' | 'shop' | 'story' | 'lucky'>('main');
   const [clickAnimations, setClickAnimations] = useState<{id: number, x: number, y: number, amount: number}[]>([]);
   const [slotResult, setSlotResult] = useState<SlotResult | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -132,6 +135,17 @@ export default function Dash({ playerAddress }: DashProps) {
   const [coinflipFlipping, setCoinflipFlipping] = useState(false);
   const [coinflipChoice, setCoinflipChoice] = useState<'heads' | 'tails' | null>(null);
   
+  // Box opening game state
+  const [boxOpeningState, setBoxOpeningState] = useState<{
+    isOpening: boolean;
+    spinningItems: {icon: string, name: string}[];
+    lastReward: {icon: string, name: string, description: string, rarity: string} | null;
+  }>({
+    isOpening: false,
+    spinningItems: [],
+    lastReward: null
+  });
+  
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const aviatorIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -152,6 +166,24 @@ export default function Dash({ playerAddress }: DashProps) {
             biggestWin: 0
           };
         }
+        
+        // Ensure all boosters exist for backward compatibility
+        const defaultBoosters = [
+          { id: 'click2x', name: 'Click Frenzy', icon: '⚡', duration: 30, multiplier: 2, price: 100, active: false, timeLeft: 0 },
+          { id: 'auto2x', name: 'Auto Boost', icon: '🚀', duration: 60, multiplier: 2, price: 500, active: false, timeLeft: 0 },
+          { id: 'mega5x', name: 'Mega Boost', icon: '💥', duration: 15, multiplier: 5, price: 2000, active: false, timeLeft: 0 },
+          { id: 'tornado10x', name: 'Tornado Boost', icon: '🌪️', duration: 10, multiplier: 10, price: 10000, active: false, timeLeft: 0 },
+          { id: 'cosmic25x', name: 'Cosmic Storm', icon: '🌌', duration: 20, multiplier: 25, price: 5000000, active: false, timeLeft: 0 },
+          { id: 'godmode50x', name: 'God Mode', icon: '👑', duration: 30, multiplier: 50, price: 100000000, active: false, timeLeft: 0 }
+        ];
+        
+        // Merge existing boosters with new ones
+        if (!parsedState.boosters || parsedState.boosters.length < 6) {
+          const existingBoosterIds = parsedState.boosters ? parsedState.boosters.map((b: any) => b.id) : [];
+          const newBoosters = defaultBoosters.filter(b => !existingBoosterIds.includes(b.id));
+          parsedState.boosters = [...(parsedState.boosters || []), ...newBoosters];
+        }
+        
         setGameState(parsedState);
       } catch (error) {
         console.error('Error loading game state:', error);
@@ -293,6 +325,110 @@ export default function Dash({ playerAddress }: DashProps) {
       };
     });
   }, []);
+
+  const openBox = useCallback((cost: number) => {
+    console.log('openBox called with cost:', cost, 'current coins:', gameState.coins, 'isOpening:', boxOpeningState.isOpening);
+    
+    if (gameState.coins < cost || boxOpeningState.isOpening) {
+      console.log('Cannot open box - insufficient coins or already opening');
+      return;
+    }
+    
+    // Deduct cost
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins - cost
+    }));
+    
+    // Define all possible rewards with their probabilities
+    const rewards = [
+      // Ultra Rare (0.01%)
+      { icon: '👑', name: 'God Mode', description: '50x multiplier for 30 seconds', rarity: 'Ultra Rare', probability: 0.0001 },
+      { icon: '👑', name: 'Royal Crown', description: 'Unlock exclusive royal theme', rarity: 'Ultra Rare', probability: 0.0001 },
+      
+      // Rare (1.09%)
+      { icon: '💎', name: 'Diamond Prestige', description: 'Reduce prestige requirement by 50%', rarity: 'Rare', probability: 0.0109 },
+      { icon: '🌟', name: 'Lucky Star', description: 'Double all gambling wins for 1 hour', rarity: 'Rare', probability: 0.0109 },
+      { icon: '🌌', name: 'Cosmic Storm', description: '25x multiplier for 20 seconds', rarity: 'Rare', probability: 0.0109 },
+      
+      // Uncommon (3%)
+      { icon: '🔥', name: 'Legendary Multiplier', description: 'All auto clickers 2x more efficient', rarity: 'Uncommon', probability: 0.03 },
+      { icon: '🎆', name: 'Golden Touch', description: 'Permanently increase click power by 50%', rarity: 'Uncommon', probability: 0.03 },
+      
+      // Common (95.9%)
+      { icon: '⚡', name: 'Click Frenzy', description: '2x multiplier for 30 seconds', rarity: 'Common', probability: 0.2398 },
+      { icon: '🚀', name: 'Auto Boost', description: '2x multiplier for 60 seconds', rarity: 'Common', probability: 0.2398 },
+      { icon: '💥', name: 'Mega Boost', description: '5x multiplier for 15 seconds', rarity: 'Common', probability: 0.2398 },
+      { icon: '🌪️', name: 'Tornado Boost', description: '10x multiplier for 10 seconds', rarity: 'Common', probability: 0.2396 }
+    ];
+    
+    // Create spinning items array (more items for CSGO-style animation)
+    const spinningItems = [];
+    for (let i = 0; i < 15; i++) {
+      const randomItem = rewards[Math.floor(Math.random() * rewards.length)];
+      spinningItems.push({ icon: randomItem.icon, name: randomItem.name });
+    }
+    
+    // Start spinning
+    setBoxOpeningState({
+      isOpening: true,
+      spinningItems,
+      lastReward: null
+    });
+    
+    // Determine final reward based on probability
+    setTimeout(() => {
+      const random = Math.random();
+      let cumulativeProbability = 0;
+      let selectedReward = rewards[rewards.length - 1]; // Default to last item
+      
+      for (const reward of rewards) {
+        cumulativeProbability += reward.probability;
+        if (random <= cumulativeProbability) {
+          selectedReward = reward;
+          break;
+        }
+      }
+      
+      setBoxOpeningState({
+        isOpening: false,
+        spinningItems: [],
+        lastReward: selectedReward
+      });
+      
+      // If it's a booster, add it to active boosters
+      if (['Click Frenzy', 'Auto Boost', 'Mega Boost', 'Tornado Boost', 'Cosmic Storm', 'God Mode'].includes(selectedReward.name)) {
+        const boosterMap: {[key: string]: string} = {
+          'Click Frenzy': 'click2x',
+          'Auto Boost': 'auto2x',
+          'Mega Boost': 'mega5x',
+          'Tornado Boost': 'tornado10x',
+          'Cosmic Storm': 'cosmic25x',
+          'God Mode': 'godmode50x'
+        };
+        
+        const boosterId = boosterMap[selectedReward.name];
+        if (boosterId) {
+          setGameState(prevState => {
+            const booster = prevState.boosters.find(b => b.id === boosterId);
+            if (booster) {
+              const newBooster = {
+                ...booster,
+                active: true,
+                timeLeft: booster.duration
+              };
+              
+              return {
+                ...prevState,
+                activeBoosters: [...prevState.activeBoosters.filter(b => b.id !== boosterId), newBooster]
+              };
+            }
+            return prevState;
+          });
+        }
+      }
+    }, 7000); // 7 seconds of spinning
+  }, [gameState.coins, boxOpeningState.isOpening]);
 
   const prestige = useCallback(() => {
     if (gameState.totalCoins < 1000000) return;
@@ -711,11 +847,12 @@ export default function Dash({ playerAddress }: DashProps) {
   }, 0);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${currentStory.background} transition-all duration-1000`}>
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen" style={{backgroundColor: '#8668ae'}}>
+      <div className="min-h-screen border-l-8 border-r-8 border-black" style={{backgroundColor: '#8668ae'}}>
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
+          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-orange-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
             🏭 CLICKER EMPIRE 🏭
           </h1>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -753,24 +890,33 @@ export default function Dash({ playerAddress }: DashProps) {
 
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-8">
-          <div className="bg-black bg-opacity-50 p-2 rounded-lg flex gap-2">
-            {(['main', 'shop', 'upgrades', 'lucky', 'story'] as const).map(tab => (
+          <div className="bg-black bg-opacity-50 p-2 rounded-lg flex flex-wrap gap-2 justify-center">
+            {(['main', 'shop', 'lucky', 'story'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setCurrentTab(tab)}
-                className={`px-6 py-3 rounded-lg font-bold transition-all ${
+                className={`px-4 py-3 rounded-lg font-bold transition-all text-sm md:text-base whitespace-nowrap ${
                   currentTab === tab
-                    ? 'bg-yellow-500 text-black'
+                    ? 'bg-purple-500 text-black'
                     : 'bg-gray-700 text-white hover:bg-gray-600'
                 }`}
               >
                 {tab === 'main' && '👆 Click'}
                 {tab === 'shop' && '🏪 Shop'}
-                {tab === 'upgrades' && '⚡ Boosters'}
                 {tab === 'lucky' && '🍀 Lucky'}
                 {tab === 'story' && '📖 Story'}
               </button>
             ))}
+            
+            {/* External Leaderboard Button */}
+            <a
+              href="https://monad-games-id-site.vercel.app/leaderboard?page=1&gameId=109"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-3 rounded-lg font-bold transition-all text-sm md:text-base whitespace-nowrap bg-green-600 text-white hover:bg-green-700 flex items-center gap-2"
+            >
+              🏆 Leaderboard 🔗
+            </a>
           </div>
         </div>
 
@@ -782,9 +928,10 @@ export default function Dash({ playerAddress }: DashProps) {
               <div className="relative">
                 <button
                   onClick={handleClick}
-                  className="w-80 h-80 mx-auto bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform duration-150 text-6xl font-bold text-white border-8 border-white animate-pulse"
+                  className="w-80 h-80 mx-auto rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform duration-150 text-6xl font-bold text-white border-8 border-white animate-pulse flex items-center justify-center"
+                  style={{backgroundColor: '#342650'}}
                 >
-                  💰
+                  <img src="/monad.png" alt="Monad" className="w-32 h-32" />
                 </button>
                 {/* Click Animations */}
                 {clickAnimations.map(anim => (
@@ -811,7 +958,7 @@ export default function Dash({ playerAddress }: DashProps) {
 
             {/* Auto Clickers */}
             <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-blue-500">
-              <h2 className="text-3xl font-bold text-blue-400 mb-6 text-center">🤖 Auto Workers</h2>
+              <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center">🤖 Auto Workers</h2>
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {gameState.autoClickers.map(clicker => (
                   <div key={clicker.id} className="bg-gray-800 bg-opacity-80 p-4 rounded-lg border border-gray-600">
@@ -842,82 +989,90 @@ export default function Dash({ playerAddress }: DashProps) {
 
         {/* Shop Tab */}
         {currentTab === 'shop' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-green-500">
-              <h2 className="text-3xl font-bold text-green-400 mb-6 text-center">🏪 Auto Clicker Shop</h2>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {gameState.autoClickers.map(clicker => {
-                  const canAfford = gameState.coins >= clicker.currentPrice;
-                  const totalIncome = clicker.income * clicker.multiplier * clicker.owned;
-                  
-                  return (
-                    <div key={clicker.id} className={`p-4 rounded-lg border-2 transition-all ${
-                      canAfford ? 'border-green-500 bg-gray-800' : 'border-gray-600 bg-gray-900'
-                    }`}>
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-4xl">{clicker.icon}</span>
-                          <div>
-                            <div className="text-white font-bold text-lg">{clicker.name}</div>
-                            <div className="text-gray-400 text-sm">
-                              Income: {formatNumber(clicker.income * clicker.multiplier)}/s each
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-yellow-400 font-bold">{formatNumber(clicker.currentPrice)}</div>
-                          <div className="text-green-400 text-sm">Owned: {clicker.owned}</div>
-                        </div>
-                      </div>
-                      {clicker.owned > 0 && (
-                        <div className="text-blue-400 text-sm mb-2">
-                          Total Income: {formatNumber(totalIncome)}/s
-                        </div>
-                      )}
-                      <button
-                        onClick={() => buyAutoClicker(clicker.id)}
-                        disabled={!canAfford}
-                        className={`w-full py-2 px-4 rounded font-bold transition-all ${
-                          canAfford 
-                            ? 'bg-green-500 hover:bg-green-600 text-white' 
-                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        {canAfford ? '💰 Buy' : '❌ Too Expensive'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
+          <div className="space-y-8">
+            {/* Special Items */}
             <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-purple-500">
               <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center">🎆 Special Items</h2>
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg border border-yellow-500 bg-gray-800">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🎆</div>
-                    <div className="text-yellow-400 font-bold text-lg">Golden Touch</div>
-                    <div className="text-gray-300 text-sm mb-3">Permanently increase click power by 50%</div>
-                    <div className="text-yellow-400 mb-3">Cost: {formatNumber(1000000)}</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-stretch">
+                <div className="p-4 rounded-lg border border-yellow-500 bg-gray-800 h-full">
+                  <div className="text-center h-full flex flex-col justify-between">
+                    <div className="min-h-[120px]">
+                      <div className="text-4xl mb-2">🎆</div>
+                      <div className="text-yellow-400 font-bold text-lg">Golden Touch</div>
+                      <div className="text-gray-300 text-sm mb-3">Permanently increase click power by 50%</div>
+                      <div className="text-yellow-400 mb-3">Cost: {formatNumber(1000000)}</div>
+                    </div>
                     <button 
                       disabled={gameState.coins < 1000000}
-                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold"
+                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold text-xs"
                     >
                       🔒 Too Expensive
                     </button>
                   </div>
                 </div>
                 
-                <div className="p-4 rounded-lg border border-red-500 bg-gray-800">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🔥</div>
-                    <div className="text-red-400 font-bold text-lg">Legendary Multiplier</div>
-                    <div className="text-gray-300 text-sm mb-3">All auto clickers 2x more efficient</div>
-                    <div className="text-red-400 mb-3">Cost: {formatNumber(10000000)}</div>
+                <div className="p-4 rounded-lg border border-red-500 bg-gray-800 h-full">
+                  <div className="text-center h-full flex flex-col justify-between">
+                    <div className="min-h-[120px]">
+                      <div className="text-4xl mb-2">🔥</div>
+                      <div className="text-red-400 font-bold text-lg">Legendary Multiplier</div>
+                      <div className="text-gray-300 text-sm mb-3">All auto clickers 2x more efficient</div>
+                      <div className="text-red-400 mb-3">Cost: {formatNumber(10000000)}</div>
+                    </div>
                     <button 
                       disabled={gameState.coins < 10000000}
-                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold"
+                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold text-xs"
+                    >
+                      🔒 Too Expensive
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border border-blue-500 bg-gray-800 h-full">
+                  <div className="text-center h-full flex flex-col justify-between">
+                    <div className="min-h-[120px]">
+                      <div className="text-4xl mb-2">💎</div>
+                      <div className="text-blue-400 font-bold text-lg">Diamond Prestige</div>
+                      <div className="text-gray-300 text-sm mb-3">Reduce prestige requirement by 50%</div>
+                      <div className="text-blue-400 mb-3">Cost: {formatNumber(50000000)}</div>
+                    </div>
+                    <button 
+                      disabled={gameState.coins < 50000000}
+                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold text-xs"
+                    >
+                      🔒 Too Expensive
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border border-green-500 bg-gray-800 h-full">
+                  <div className="text-center h-full flex flex-col justify-between">
+                    <div className="min-h-[120px]">
+                      <div className="text-4xl mb-2">🌟</div>
+                      <div className="text-green-400 font-bold text-lg">Lucky Star</div>
+                      <div className="text-gray-300 text-sm mb-3">Double all gambling wins for 1 hour</div>
+                      <div className="text-green-400 mb-3">Cost: {formatNumber(25000000)}</div>
+                    </div>
+                    <button 
+                      disabled={gameState.coins < 25000000}
+                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold text-xs"
+                    >
+                      🔒 Too Expensive
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border border-pink-500 bg-gray-800 h-full">
+                  <div className="text-center h-full flex flex-col justify-between">
+                    <div className="min-h-[120px]">
+                      <div className="text-4xl mb-2">👑</div>
+                      <div className="text-pink-400 font-bold text-lg">Royal Crown</div>
+                      <div className="text-gray-300 text-sm mb-3">Unlock exclusive royal theme</div>
+                      <div className="text-pink-400 mb-3">Cost: {formatNumber(100000000)}</div>
+                    </div>
+                    <button 
+                      disabled={gameState.coins < 100000000}
+                      className="w-full bg-gray-600 text-gray-400 cursor-not-allowed py-2 px-4 rounded font-bold text-xs"
                     >
                       🔒 Too Expensive
                     </button>
@@ -925,41 +1080,37 @@ export default function Dash({ playerAddress }: DashProps) {
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Boosters Tab */}
-        {currentTab === 'upgrades' && (
-          <div className="max-w-4xl mx-auto">
+            {/* Power Boosters */}
             <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-orange-500">
               <h2 className="text-3xl font-bold text-orange-400 mb-6 text-center">⚡ Power Boosters</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {gameState.boosters.map(booster => {
                   const canAfford = gameState.coins >= booster.price;
                   const isActive = gameState.activeBoosters.some(b => b.id === booster.id);
                   
                   return (
-                    <div key={booster.id} className={`p-6 rounded-lg border-2 text-center transition-all ${
+                    <div key={booster.id} className={`p-3 rounded-lg border-2 text-center transition-all ${
                       isActive ? 'border-orange-500 bg-orange-900 bg-opacity-50' :
                       canAfford ? 'border-green-500 bg-gray-800' : 'border-gray-600 bg-gray-900'
                     }`}>
-                      <div className="text-5xl mb-3">{booster.icon}</div>
-                      <div className="text-white font-bold text-xl mb-2">{booster.name}</div>
-                      <div className="text-gray-300 text-sm mb-3">
+                      <div className="text-3xl mb-1">{booster.icon}</div>
+                      <div className="text-white font-bold text-base mb-1">{booster.name}</div>
+                      <div className="text-gray-300 text-xs mb-2">
                         {booster.multiplier}x multiplier for {booster.duration} seconds
                       </div>
-                      <div className="text-yellow-400 mb-4 font-bold">
+                      <div className="text-yellow-400 mb-3 font-bold text-sm">
                         Cost: {formatNumber(booster.price)}
                       </div>
                       {isActive ? (
-                        <div className="bg-orange-500 px-4 py-2 rounded font-bold text-white">
+                        <div className="bg-orange-500 px-3 py-1 rounded font-bold text-white text-xs">
                           ⏱️ Active ({gameState.activeBoosters.find(b => b.id === booster.id)?.timeLeft}s)
                         </div>
                       ) : (
                         <button
                           onClick={() => buyBooster(booster.id)}
                           disabled={!canAfford}
-                          className={`w-full py-2 px-4 rounded font-bold transition-all ${
+                          className={`w-full py-1 px-3 rounded font-bold transition-all text-xs ${
                             canAfford 
                               ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                               : 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -971,6 +1122,96 @@ export default function Dash({ playerAddress }: DashProps) {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Box Opening Game */}
+            <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-yellow-500">
+              <h2 className="text-3xl font-bold text-yellow-400 mb-6 text-center"></h2>
+              
+              {/* Box Opening Area */}
+              <div className="bg-gray-900 p-8 rounded-lg mb-6 border-4 border-yellow-600">
+                <div className="text-center mb-6">
+                  <div className="text-8xl mb-4">🎁</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">Open Mystery Boxes!</h3>
+                  <p className="text-gray-300">Spend coins to get random items with spinning animation</p>
+                </div>
+                
+                {boxOpeningState.isOpening ? (
+                  <div className="mb-6">
+                    <div className="text-xl font-bold text-yellow-400 mb-4">Opening surprise box...</div>
+                    <div className="relative overflow-hidden bg-gray-900 rounded-lg p-4 border-4 border-yellow-500">
+                      <div className="flex gap-3" style={{
+                        animation: 'csgoSlide 7s ease-out infinite',
+                        width: 'fit-content'
+                      }}>
+                        {[...boxOpeningState.spinningItems, ...boxOpeningState.spinningItems].map((item, index) => (
+                          <div key={index} className="min-w-[80px] h-20 bg-gray-800 rounded-lg border-2 border-yellow-400 flex items-center justify-center flex-shrink-0">
+                            <span className="text-2xl">{item.icon}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Center indicator */}
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1 h-full bg-red-500 opacity-80"></div>
+                    </div>
+                    <style jsx>{`
+                      @keyframes csgoSlide {
+                        0% { transform: translateX(0); }
+                        57% { transform: translateX(-${boxOpeningState.spinningItems.length * 80}px); }
+                        71% { transform: translateX(-${boxOpeningState.spinningItems.length * 87}px); }
+                        86% { transform: translateX(-${boxOpeningState.spinningItems.length * 90}px); }
+                        100% { transform: translateX(-${boxOpeningState.spinningItems.length * 92}px); }
+                      }
+                    `}</style>
+                  </div>
+                ) : boxOpeningState.lastReward ? (
+                  <div className="mb-6">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">{boxOpeningState.lastReward.icon}</div>
+                      <div className="text-2xl font-bold text-green-400 mb-2">
+                        🎉 You got: {boxOpeningState.lastReward.name}!
+                      </div>
+                      <div className="text-lg text-gray-300">{boxOpeningState.lastReward.description}</div>
+                    </div>
+                  </div>
+                ) : null}
+                
+                {/* Box Opening Button */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => openBox(5000000)}
+                    disabled={gameState.coins < 5000000 || boxOpeningState.isOpening}
+                    className={`py-6 px-8 rounded-lg font-bold text-xl transition-all ${
+                      gameState.coins >= 5000000 && !boxOpeningState.isOpening
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black shadow-lg'
+                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    🎆 Open Surprise Box<br />
+                    <span className="text-lg">Cost: {formatNumber(5000000)} coins</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Drop Rates */}
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h4 className="text-lg font-bold text-white mb-3 text-center">Drop Rates</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-red-400 font-bold mb-2">Ultra Rare (0.01%)</div>
+                    <div className="text-gray-300 mb-1">👑 God Mode, 👑 Royal Crown</div>
+                    
+                    <div className="text-purple-400 font-bold mb-2 mt-3">Rare (1.09%)</div>
+                    <div className="text-gray-300 mb-1">💎 Diamond Prestige, 🌟 Lucky Star, 🌌 Cosmic Storm</div>
+                  </div>
+                  <div>
+                    <div className="text-blue-400 font-bold mb-2">Uncommon (3%)</div>
+                    <div className="text-gray-300 mb-1">🔥 Legendary Multiplier, 🎆 Golden Touch</div>
+                    
+                    <div className="text-green-400 font-bold mb-2 mt-3">Common (95.9%)</div>
+                    <div className="text-gray-300 mb-1">⚡ Click Frenzy, 🚀 Auto Boost, 💥 Mega Boost, 🌪️ Tornado Boost</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1493,6 +1734,7 @@ export default function Dash({ playerAddress }: DashProps) {
             {saveMessage}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
