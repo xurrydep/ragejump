@@ -114,13 +114,7 @@ export default function Dash({ playerAddress }: DashProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedBet, setSelectedBet] = useState(5);
   const [currentGambleGame, setCurrentGambleGame] = useState<'slots' | 'aviator' | 'minesweeper' | 'coinflip'>('slots');
-  const [aviatorMultiplier, setAviatorMultiplier] = useState(1.0);
-  const [aviatorFlying, setAviatorFlying] = useState(false);
-  const [minesweeperGrid, setMinesweeperGrid] = useState<{revealed: boolean, isMine: boolean}[]>([]);
-  const [coinflipResult, setCoinflipResult] = useState<'heads' | 'tails' | null>(null);
-  const [coinflipFlipping, setCoinflipFlipping] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const animationRef = useRef<number>(0);
 
   // Load saved game state
   useEffect(() => {
@@ -903,12 +897,8 @@ export default function Dash({ playerAddress }: DashProps) {
                   <div className="bg-gradient-to-b from-blue-900 to-blue-600 p-8 rounded-lg mb-6 border-4 border-blue-400 relative overflow-hidden">
                     <div className="text-center">
                       <div className="text-6xl mb-4">✈️</div>
-                      <div className="text-4xl font-bold text-white mb-4">{aviatorMultiplier.toFixed(2)}x</div>
-                      {aviatorFlying ? (
-                        <div className="text-green-400 text-xl">Flying... Cash out now!</div>
-                      ) : (
-                        <div className="text-gray-300">Waiting for next flight...</div>
-                      )}
+                      <div className="text-4xl font-bold text-white mb-4">1.00x</div>
+                      <div className="text-gray-300">Waiting for next flight...</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-5 gap-3 mb-6">
@@ -995,14 +985,9 @@ export default function Dash({ playerAddress }: DashProps) {
                   <h3 className="text-3xl font-bold text-yellow-400 mb-6 text-center">🪙 COIN FLIP</h3>
                   <div className="bg-gray-900 p-8 rounded-lg mb-6 border-4 border-yellow-400">
                     <div className="text-center">
-                      <div className={`text-8xl mb-4 ${coinflipFlipping ? 'animate-spin' : ''}`}>
-                        {coinflipFlipping ? '🪙' : coinflipResult === 'heads' ? '👑' : coinflipResult === 'tails' ? '🪙' : '🪙'}
+                      <div className="text-8xl mb-4">
+                        🪙
                       </div>
-                      {coinflipResult && !coinflipFlipping && (
-                        <div className="text-2xl font-bold text-white">
-                          {coinflipResult === 'heads' ? 'HEADS!' : 'TAILS!'}
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-6 mb-6">
