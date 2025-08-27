@@ -179,7 +179,7 @@ export default function Dash({ playerAddress }: DashProps) {
         
         // Merge existing boosters with new ones
         if (!parsedState.boosters || parsedState.boosters.length < 6) {
-          const existingBoosterIds = parsedState.boosters ? parsedState.boosters.map((b: any) => b.id) : [];
+          const existingBoosterIds = parsedState.boosters ? parsedState.boosters.map((b: { id: string }) => b.id) : [];
           const newBoosters = defaultBoosters.filter(b => !existingBoosterIds.includes(b.id));
           parsedState.boosters = [...(parsedState.boosters || []), ...newBoosters];
         }
