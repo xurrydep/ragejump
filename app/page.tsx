@@ -99,7 +99,7 @@ export default function Home() {
                   📖 STORY TAB
                 </h3>
                 <ul className="text-gray-300 space-y-2 text-sm">
-                  <li>• Follow your empire's journey</li>
+                  <li>• Follow your empire&apos;s journey</li>
                   <li>• Unlock new chapters</li>
                   <li>• Beautiful dynamic backgrounds</li>
                   <li>• From humble start to cosmic power</li>
