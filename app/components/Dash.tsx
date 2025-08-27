@@ -114,7 +114,26 @@ export default function Dash({ playerAddress }: DashProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedBet, setSelectedBet] = useState(5);
   const [currentGambleGame, setCurrentGambleGame] = useState<'slots' | 'aviator' | 'minesweeper' | 'coinflip'>('slots');
+  
+  // Aviator game state
+  const [aviatorMultiplier, setAviatorMultiplier] = useState(1.0);
+  const [aviatorFlying, setAviatorFlying] = useState(false);
+  const [aviatorBet, setAviatorBet] = useState(0);
+  const [aviatorGameActive, setAviatorGameActive] = useState(false);
+  
+  // Minesweeper game state
+  const [minesweeperGrid, setMinesweeperGrid] = useState<{revealed: boolean, isMine: boolean, value: number}[]>([]);
+  const [minesweeperGameActive, setMinesweeperGameActive] = useState(false);
+  const [minesweeperBet, setMinesweeperBet] = useState(0);
+  const [minesweeperMultiplier, setMinesweeperMultiplier] = useState(1.0);
+  
+  // Coin flip game state
+  const [coinflipResult, setCoinflipResult] = useState<'heads' | 'tails' | null>(null);
+  const [coinflipFlipping, setCoinflipFlipping] = useState(false);
+  const [coinflipChoice, setCoinflipChoice] = useState<'heads' | 'tails' | null>(null);
+  
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const aviatorIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load saved game state
   useEffect(() => {
@@ -185,6 +204,9 @@ export default function Dash({ playerAddress }: DashProps) {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
+      if (aviatorIntervalRef.current) {
+        clearInterval(aviatorIntervalRef.current);
       }
     };
   }, []);
@@ -410,6 +432,219 @@ export default function Dash({ playerAddress }: DashProps) {
       setIsSpinning(false);
     }, 2000); // 2 second spinning animation
   }, [gameState.coins, isSpinning]);
+
+  // Aviator Game Function
+  const startAviator = useCallback((betAmount: number) => {
+    if (gameState.coins < betAmount || aviatorGameActive) return;
+    
+    setAviatorBet(betAmount);
+    setAviatorGameActive(true);
+    setAviatorFlying(true);
+    setAviatorMultiplier(1.0);
+    
+    // Deduct bet amount
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins - betAmount,
+      slots: {
+        ...prev.slots,
+        totalSpins: prev.slots.totalSpins + 1
+      }
+    }));
+    
+    // Start the flight
+    const crashPoint = Math.random() * 9 + 1; // Random between 1x and 10x
+    let currentMultiplier = 1.0;
+    
+    aviatorIntervalRef.current = setInterval(() => {
+      currentMultiplier += 0.1;
+      setAviatorMultiplier(currentMultiplier);
+      
+      if (currentMultiplier >= crashPoint) {
+        // Plane crashed - player loses
+        setAviatorFlying(false);
+        setAviatorGameActive(false);
+        
+        setGameState(prev => ({
+          ...prev,
+          slots: {
+            ...prev.slots,
+            totalLost: prev.slots.totalLost + betAmount
+          }
+        }));
+        
+        if (aviatorIntervalRef.current) {
+          clearInterval(aviatorIntervalRef.current);
+        }
+        
+        // Start new round after 3 seconds
+        setTimeout(() => {
+          setAviatorMultiplier(1.0);
+        }, 3000);
+      }
+    }, 100);
+  }, [gameState.coins, aviatorGameActive]);
+  
+  const cashoutAviator = useCallback(() => {
+    if (!aviatorGameActive || !aviatorFlying) return;
+    
+    const winAmount = Math.floor(aviatorBet * aviatorMultiplier);
+    
+    setAviatorFlying(false);
+    setAviatorGameActive(false);
+    
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins + winAmount,
+      totalCoins: Math.max(prev.totalCoins, prev.coins + winAmount),
+      slots: {
+        ...prev.slots,
+        totalWon: prev.slots.totalWon + (winAmount - aviatorBet),
+        biggestWin: winAmount > prev.slots.biggestWin ? winAmount : prev.slots.biggestWin
+      }
+    }));
+    
+    if (aviatorIntervalRef.current) {
+      clearInterval(aviatorIntervalRef.current);
+    }
+    
+    // Start new round after 3 seconds
+    setTimeout(() => {
+      setAviatorMultiplier(1.0);
+    }, 3000);
+  }, [aviatorBet, aviatorMultiplier, aviatorGameActive, aviatorFlying]);
+
+  // Minesweeper Game Function
+  const startMinesweeper = useCallback((betAmount: number) => {
+    if (gameState.coins < betAmount || minesweeperGameActive) return;
+    
+    setMinesweeperBet(betAmount);
+    setMinesweeperGameActive(true);
+    setMinesweeperMultiplier(1.0);
+    
+    // Deduct bet amount
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins - betAmount,
+      slots: {
+        ...prev.slots,
+        totalSpins: prev.slots.totalSpins + 1
+      }
+    }));
+    
+    // Generate grid with 5 mines out of 25 tiles
+    const grid = Array.from({length: 25}, (_, i) => ({
+      revealed: false,
+      isMine: false,
+      value: 0
+    }));
+    
+    // Place 5 random mines
+    const minePositions = new Set<number>();
+    while (minePositions.size < 5) {
+      minePositions.add(Math.floor(Math.random() * 25));
+    }
+    
+    minePositions.forEach(pos => {
+      grid[pos].isMine = true;
+    });
+    
+    setMinesweeperGrid(grid);
+  }, [gameState.coins, minesweeperGameActive]);
+  
+  const revealTile = useCallback((index: number) => {
+    if (!minesweeperGameActive || minesweeperGrid[index].revealed) return;
+    
+    const newGrid = [...minesweeperGrid];
+    newGrid[index].revealed = true;
+    
+    if (newGrid[index].isMine) {
+      // Hit a mine - game over
+      setMinesweeperGameActive(false);
+      setGameState(prev => ({
+        ...prev,
+        slots: {
+          ...prev.slots,
+          totalLost: prev.slots.totalLost + minesweeperBet
+        }
+      }));
+    } else {
+      // Safe tile - increase multiplier
+      const newMultiplier = minesweeperMultiplier + 0.2;
+      setMinesweeperMultiplier(newMultiplier);
+    }
+    
+    setMinesweeperGrid(newGrid);
+  }, [minesweeperGameActive, minesweeperGrid, minesweeperBet, minesweeperMultiplier]);
+  
+  const cashoutMinesweeper = useCallback(() => {
+    if (!minesweeperGameActive) return;
+    
+    const winAmount = Math.floor(minesweeperBet * minesweeperMultiplier);
+    
+    setMinesweeperGameActive(false);
+    
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins + winAmount,
+      totalCoins: Math.max(prev.totalCoins, prev.coins + winAmount),
+      slots: {
+        ...prev.slots,
+        totalWon: prev.slots.totalWon + (winAmount - minesweeperBet),
+        biggestWin: winAmount > prev.slots.biggestWin ? winAmount : prev.slots.biggestWin
+      }
+    }));
+  }, [minesweeperBet, minesweeperMultiplier, minesweeperGameActive]);
+
+  // Coin Flip Game Function
+  const playCoinFlip = useCallback((betAmount: number, choice: 'heads' | 'tails') => {
+    if (gameState.coins < betAmount || coinflipFlipping) return;
+    
+    setCoinflipChoice(choice);
+    setCoinflipFlipping(true);
+    setCoinflipResult(null);
+    
+    // Deduct bet amount
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins - betAmount,
+      slots: {
+        ...prev.slots,
+        totalSpins: prev.slots.totalSpins + 1
+      }
+    }));
+    
+    // Simulate coin flip after 2 seconds
+    setTimeout(() => {
+      const result: 'heads' | 'tails' = Math.random() < 0.5 ? 'heads' : 'tails';
+      setCoinflipResult(result);
+      setCoinflipFlipping(false);
+      
+      if (result === choice) {
+        // Player won - 2x payout
+        const winAmount = betAmount * 2;
+        setGameState(prev => ({
+          ...prev,
+          coins: prev.coins + winAmount,
+          totalCoins: Math.max(prev.totalCoins, prev.coins + winAmount),
+          slots: {
+            ...prev.slots,
+            totalWon: prev.slots.totalWon + betAmount,
+            biggestWin: winAmount > prev.slots.biggestWin ? winAmount : prev.slots.biggestWin
+          }
+        }));
+      } else {
+        // Player lost
+        setGameState(prev => ({
+          ...prev,
+          slots: {
+            ...prev.slots,
+            totalLost: prev.slots.totalLost + betAmount
+          }
+        }));
+      }
+    }, 2000);
+  }, [gameState.coins, coinflipFlipping]);
 
   const formatNumber = (num: number): string => {
     if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
@@ -896,9 +1131,15 @@ export default function Dash({ playerAddress }: DashProps) {
                   <h3 className="text-3xl font-bold text-blue-400 mb-6 text-center">✈️ AVIATOR</h3>
                   <div className="bg-gradient-to-b from-blue-900 to-blue-600 p-8 rounded-lg mb-6 border-4 border-blue-400 relative overflow-hidden">
                     <div className="text-center">
-                      <div className="text-6xl mb-4">✈️</div>
-                      <div className="text-4xl font-bold text-white mb-4">1.00x</div>
-                      <div className="text-gray-300">Waiting for next flight...</div>
+                      <div className={`text-6xl mb-4 ${aviatorFlying ? 'animate-bounce' : ''}`}>✈️</div>
+                      <div className="text-4xl font-bold text-white mb-4">{aviatorMultiplier.toFixed(2)}x</div>
+                      {aviatorFlying ? (
+                        <div className="text-green-400 text-xl">Flying... Cash out now!</div>
+                      ) : aviatorGameActive ? (
+                        <div className="text-red-400 text-xl">CRASHED!</div>
+                      ) : (
+                        <div className="text-gray-300">Waiting for next flight...</div>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-5 gap-3 mb-6">
@@ -906,18 +1147,31 @@ export default function Dash({ playerAddress }: DashProps) {
                       <button
                         key={bet}
                         onClick={() => setSelectedBet(bet)}
-                        disabled={gameState.coins < bet}
+                        disabled={gameState.coins < bet || aviatorGameActive}
                         className={`py-3 px-4 rounded-lg font-bold transition-all ${
                           selectedBet === bet ? 'bg-blue-500 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'
-                        }`}
+                        } ${gameState.coins < bet || aviatorGameActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {formatNumber(bet)}
                       </button>
                     ))}
                   </div>
-                  <button className="w-full py-4 px-8 rounded-lg font-bold text-xl bg-blue-500 hover:bg-blue-600 text-white">
-                    ✈️ Start Flight ({formatNumber(selectedBet)} coins)
-                  </button>
+                  {aviatorFlying ? (
+                    <button 
+                      onClick={cashoutAviator}
+                      className="w-full py-4 px-8 rounded-lg font-bold text-xl bg-green-500 hover:bg-green-600 text-white animate-pulse"
+                    >
+                      💰 Cash Out ({formatNumber(Math.floor(aviatorBet * aviatorMultiplier))} coins)
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => startAviator(selectedBet)}
+                      disabled={gameState.coins < selectedBet || aviatorGameActive}
+                      className="w-full py-4 px-8 rounded-lg font-bold text-xl bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
+                    >
+                      ✈️ Start Flight ({formatNumber(selectedBet)} coins)
+                    </button>
+                  )}
                 </div>
                 <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-blue-400">
                   <h4 className="text-xl font-bold text-blue-400 mb-4">How to Play</h4>
@@ -936,16 +1190,37 @@ export default function Dash({ playerAddress }: DashProps) {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 bg-black bg-opacity-60 p-8 rounded-lg border border-red-500">
                   <h3 className="text-3xl font-bold text-red-400 mb-6 text-center">💣 MINESWEEPER</h3>
+                  {minesweeperGameActive && (
+                    <div className="text-center mb-4">
+                      <div className="text-2xl font-bold text-yellow-400">
+                        Current Multiplier: {minesweeperMultiplier.toFixed(1)}x
+                      </div>
+                      <div className="text-lg text-white">
+                        Potential Win: {formatNumber(Math.floor(minesweeperBet * minesweeperMultiplier))} coins
+                      </div>
+                    </div>
+                  )}
                   <div className="bg-gray-900 p-6 rounded-lg mb-6 border-4 border-red-400">
                     <div className="grid grid-cols-5 gap-2 max-w-md mx-auto">
-                      {Array.from({length: 25}, (_, i) => (
-                        <button
-                          key={i}
-                          className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded border-2 border-gray-500 text-white font-bold"
-                        >
-                          ?
-                        </button>
-                      ))}
+                      {Array.from({length: 25}, (_, i) => {
+                        const tile = minesweeperGrid[i];
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => revealTile(i)}
+                            disabled={!minesweeperGameActive || (tile && tile.revealed)}
+                            className={`w-12 h-12 rounded border-2 text-white font-bold transition-all ${
+                              tile && tile.revealed
+                                ? tile.isMine
+                                  ? 'bg-red-500 border-red-300'
+                                  : 'bg-green-500 border-green-300'
+                                : 'bg-gray-700 hover:bg-gray-600 border-gray-500'
+                            } ${!minesweeperGameActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {tile && tile.revealed ? (tile.isMine ? '💣' : '✨') : '?'}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="grid grid-cols-5 gap-3 mb-6">
@@ -953,25 +1228,39 @@ export default function Dash({ playerAddress }: DashProps) {
                       <button
                         key={bet}
                         onClick={() => setSelectedBet(bet)}
+                        disabled={gameState.coins < bet || minesweeperGameActive}
                         className={`py-3 px-4 rounded-lg font-bold transition-all ${
                           selectedBet === bet ? 'bg-red-500 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'
-                        }`}
+                        } ${gameState.coins < bet || minesweeperGameActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {formatNumber(bet)}
                       </button>
                     ))}
                   </div>
-                  <button className="w-full py-4 px-8 rounded-lg font-bold text-xl bg-red-500 hover:bg-red-600 text-white">
-                    💣 Start Game ({formatNumber(selectedBet)} coins)
-                  </button>
+                  {minesweeperGameActive ? (
+                    <button 
+                      onClick={cashoutMinesweeper}
+                      className="w-full py-4 px-8 rounded-lg font-bold text-xl bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      💰 Cash Out ({formatNumber(Math.floor(minesweeperBet * minesweeperMultiplier))} coins)
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => startMinesweeper(selectedBet)}
+                      disabled={gameState.coins < selectedBet}
+                      className="w-full py-4 px-8 rounded-lg font-bold text-xl bg-red-500 hover:bg-red-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
+                    >
+                      💣 Start Game ({formatNumber(selectedBet)} coins)
+                    </button>
+                  )}
                 </div>
                 <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-red-400">
                   <h4 className="text-xl font-bold text-red-400 mb-4">How to Play</h4>
                   <div className="text-sm text-gray-300 space-y-2">
-                    <p>• Choose your bet amount</p>
+                    <p>• Choose your bet amount and start the game</p>
                     <p>• Click tiles to reveal them</p>
-                    <p>• Avoid the mines (💣)</p>
-                    <p>• Each safe tile multiplies your bet</p>
+                    <p>• Avoid the mines (💣) - there are 5 on the grid</p>
+                    <p>• Each safe tile increases your multiplier by 0.2x</p>
                     <p>• Cash out anytime or risk it all!</p>
                   </div>
                 </div>
@@ -985,16 +1274,36 @@ export default function Dash({ playerAddress }: DashProps) {
                   <h3 className="text-3xl font-bold text-yellow-400 mb-6 text-center">🪙 COIN FLIP</h3>
                   <div className="bg-gray-900 p-8 rounded-lg mb-6 border-4 border-yellow-400">
                     <div className="text-center">
-                      <div className="text-8xl mb-4">
-                        🪙
+                      <div className={`text-8xl mb-4 ${coinflipFlipping ? 'animate-spin' : ''}`}>
+                        {coinflipFlipping ? '🪙' : coinflipResult === 'heads' ? '👑' : coinflipResult === 'tails' ? '🪙' : '🪙'}
                       </div>
+                      {coinflipResult && !coinflipFlipping && (
+                        <div className="text-2xl font-bold text-white mb-2">
+                          {coinflipResult === 'heads' ? 'HEADS!' : 'TAILS!'}
+                        </div>
+                      )}
+                      {coinflipResult && !coinflipFlipping && coinflipChoice && (
+                        <div className={`text-xl font-bold ${
+                          coinflipResult === coinflipChoice ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {coinflipResult === coinflipChoice ? '🎉 YOU WON!' : '😔 YOU LOST!'}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-6 mb-6">
-                    <button className="py-4 px-6 rounded-lg font-bold text-xl bg-blue-500 hover:bg-blue-600 text-white border-4 border-blue-400">
+                    <button 
+                      onClick={() => playCoinFlip(selectedBet, 'heads')}
+                      disabled={gameState.coins < selectedBet || coinflipFlipping}
+                      className="py-4 px-6 rounded-lg font-bold text-xl bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white border-4 border-blue-400"
+                    >
                       👑 Heads (2x)
                     </button>
-                    <button className="py-4 px-6 rounded-lg font-bold text-xl bg-orange-500 hover:bg-orange-600 text-white border-4 border-orange-400">
+                    <button 
+                      onClick={() => playCoinFlip(selectedBet, 'tails')}
+                      disabled={gameState.coins < selectedBet || coinflipFlipping}
+                      className="py-4 px-6 rounded-lg font-bold text-xl bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white border-4 border-orange-400"
+                    >
                       🪙 Tails (2x)
                     </button>
                   </div>
@@ -1003,9 +1312,10 @@ export default function Dash({ playerAddress }: DashProps) {
                       <button
                         key={bet}
                         onClick={() => setSelectedBet(bet)}
+                        disabled={gameState.coins < bet || coinflipFlipping}
                         className={`py-3 px-4 rounded-lg font-bold transition-all ${
                           selectedBet === bet ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-white hover:bg-gray-600'
-                        }`}
+                        } ${gameState.coins < bet || coinflipFlipping ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {formatNumber(bet)}
                       </button>
@@ -1013,6 +1323,11 @@ export default function Dash({ playerAddress }: DashProps) {
                   </div>
                   <div className="text-center text-white">
                     Selected Bet: <span className="font-bold text-yellow-400">{formatNumber(selectedBet)} coins</span>
+                    {coinflipFlipping && (
+                      <div className="mt-2 text-lg font-bold text-yellow-400 animate-pulse">
+                        Flipping coin...
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-yellow-400">
