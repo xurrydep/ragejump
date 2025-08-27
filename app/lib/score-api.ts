@@ -48,10 +48,12 @@ interface PlayerDataPerGameResponse {
 // Get session token for authenticated requests
 export async function getSessionToken(playerAddress: string): Promise<string | null> {
   try {
+    console.log('Getting session token for playerAddress:', playerAddress);
     // In a real implementation, you would sign a message with the user's wallet here
     const message = `Authenticate for score submission: ${playerAddress}`;
     const signedMessage = "dummy_signature"; // This should be replaced with actual wallet signing
     
+    console.log('Sending session token request with message:', message);
     const response = await fetch('/api/get-session-token', {
       method: 'POST',
       headers: {
@@ -64,7 +66,9 @@ export async function getSessionToken(playerAddress: string): Promise<string | n
       }),
     });
 
+    console.log('Session token response status:', response.status);
     const data = await response.json();
+    console.log('Session token response data:', data);
     if (data.success) {
       return data.sessionToken;
     }
@@ -124,16 +128,27 @@ export async function submitPlayerScore(
   submitToLeaderboard: boolean = true
 ): Promise<ScoreSubmissionResponse> {
   try {
+    console.log('submitPlayerScore called with:', { playerAddress, scoreAmount, transactionAmount, sessionToken: sessionToken ? 'present' : 'missing', submitToLeaderboard });
+    
     // Get session token if not provided
     if (!sessionToken) {
+      console.log('No session token provided, getting new one...');
       sessionToken = await getSessionToken(playerAddress);
       if (!sessionToken) {
+        console.error('Failed to get session token');
         return {
           success: false,
           error: 'Failed to authenticate. Please try again.',
         };
       }
     }
+
+    console.log('About to submit to blockchain with data:', {
+      playerAddress,
+      scoreAmount,
+      transactionAmount,
+      sessionToken: sessionToken ? 'present' : 'missing'
+    });
 
     // Submit to blockchain contract
     const response = await fetch('/api/update-player-data', {
@@ -149,7 +164,9 @@ export async function submitPlayerScore(
       }),
     });
 
+    console.log('update-player-data response status:', response.status);
     const data = await response.json();
+    console.log('update-player-data response data:', data);
     
     // If blockchain submission successful and leaderboard submission requested
     if (data.success && submitToLeaderboard) {

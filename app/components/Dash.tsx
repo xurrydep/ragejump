@@ -332,12 +332,29 @@ export default function Dash({ playerAddress }: DashProps) {
   const saveScore = useCallback(() => {
     if (playerAddress && gameState.totalCoins > 0) {
       setIsSavingScore(true);
-      submitPlayerScore(playerAddress, Math.floor(gameState.totalCoins))
-        .then(() => {
-          setSaveMessage('Progress saved to blockchain!');
-          if (gameState.totalCoins > highScore) {
-            setHighScore(Math.floor(gameState.totalCoins));
-            localStorage.setItem('gameHighScore', Math.floor(gameState.totalCoins).toString());
+      
+      // Limit score to maximum allowed per request (1000)
+      const MAX_SCORE_PER_REQUEST = 1000;
+      const scoreToSubmit = Math.min(Math.floor(gameState.totalCoins), MAX_SCORE_PER_REQUEST);
+      
+      console.log('Saving score:', {
+        originalScore: Math.floor(gameState.totalCoins),
+        scoreToSubmit,
+        playerAddress
+      });
+      
+      submitPlayerScore(playerAddress, scoreToSubmit)
+        .then((result) => {
+          console.log('Save score result:', result);
+          if (result.success) {
+            setSaveMessage('Progress saved to blockchain!');
+            if (gameState.totalCoins > highScore) {
+              setHighScore(Math.floor(gameState.totalCoins));
+              localStorage.setItem('gameHighScore', Math.floor(gameState.totalCoins).toString());
+            }
+          } else {
+            console.error('Save failed:', result.error);
+            setSaveMessage(`Error: ${result.error || 'Failed to save progress'}`);
           }
         })
         .catch((error) => {

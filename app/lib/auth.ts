@@ -22,18 +22,39 @@ export function generateSessionToken(playerAddress: string, timestamp: number): 
 
 // Validate session token with player address verification
 export function validateSessionToken(token: string, playerAddress: string, timestampWindow: number = 300000): boolean {
-  const now = Date.now();
-  
-  // Check tokens within the timestamp window (default 5 minutes)
-  for (let i = 0; i < timestampWindow; i += 30000) { // Check every 30 seconds
-    const timestamp = now - i;
-    const expectedToken = generateSessionToken(playerAddress, Math.floor(timestamp / 30000) * 30000);
-    if (token === expectedToken) {
-      return true;
+  try {
+    console.log('Validating session token for playerAddress:', playerAddress, 'token:', token);
+    
+    // Check if API_SECRET is available
+    try {
+      const secret = getServerApiSecret();
+      console.log('API_SECRET is available');
+    } catch (error) {
+      console.error('API_SECRET not available:', error);
+      return false;
     }
+    
+    const now = Date.now();
+    console.log('Current timestamp:', now, 'window:', timestampWindow);
+    
+    // Check tokens within the timestamp window (default 5 minutes)
+    for (let i = 0; i < timestampWindow; i += 30000) { // Check every 30 seconds
+      const timestamp = now - i;
+      const roundedTimestamp = Math.floor(timestamp / 30000) * 30000;
+      const expectedToken = generateSessionToken(playerAddress, roundedTimestamp);
+      console.log('Checking timestamp:', roundedTimestamp, 'expected token:', expectedToken);
+      if (token === expectedToken) {
+        console.log('Token validation successful!');
+        return true;
+      }
+    }
+    
+    console.log('Token validation failed - no matching token found');
+    return false;
+  } catch (error) {
+    console.error('Error during session token validation:', error);
+    return false;
   }
-  
-  return false;
 }
 
 // Legacy API key validation for internal server use only

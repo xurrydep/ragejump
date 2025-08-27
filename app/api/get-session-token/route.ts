@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { playerAddress, signedMessage, message } = await request.json();
+    console.log('Session token request for playerAddress:', playerAddress);
 
     if (!playerAddress || !signedMessage || !message) {
       return NextResponse.json(
@@ -36,13 +37,24 @@ export async function POST(request: NextRequest) {
     
     // Generate session token
     const timestamp = Math.floor(Date.now() / 30000) * 30000; // Round to 30-second intervals
-    const sessionToken = generateSessionToken(playerAddress, timestamp);
-
-    return NextResponse.json({
-      success: true,
-      sessionToken,
-      expiresAt: timestamp + 300000, // 5 minutes from token timestamp
-    });
+    console.log('Generating session token for playerAddress:', playerAddress, 'timestamp:', timestamp);
+    
+    try {
+      const sessionToken = generateSessionToken(playerAddress, timestamp);
+      console.log('Session token generated successfully for playerAddress:', playerAddress);
+      
+      return NextResponse.json({
+        success: true,
+        sessionToken,
+        expiresAt: timestamp + 300000, // 5 minutes from token timestamp
+      });
+    } catch (tokenError) {
+      console.error('Error generating session token:', tokenError);
+      return NextResponse.json(
+        { error: 'Failed to generate session token - server configuration issue' },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error('Error generating session token:', error);

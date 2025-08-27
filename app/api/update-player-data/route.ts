@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     // Security checks - Origin validation first
     if (!validateOrigin(request)) {
+      console.error('Origin validation failed');
       return createAuthenticatedResponse({ error: 'Forbidden: Invalid origin' }, 403);
     }
 
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = rateLimit(clientIp, { maxRequests: 10, windowMs: 60000 }); // 10 requests per minute
     
     if (!rateLimitResult.allowed) {
+      console.error('Rate limit exceeded for IP:', clientIp);
       return createAuthenticatedResponse({
         error: 'Too many requests',
         resetTime: rateLimitResult.resetTime
@@ -26,15 +28,39 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const { playerAddress, scoreAmount, transactionAmount, sessionToken } = await request.json();
-
-    // Session token authentication - verify the user controls the wallet
-    if (!sessionToken || !validateSessionToken(sessionToken, playerAddress)) {
-      return createAuthenticatedResponse({ error: 'Unauthorized: Invalid or expired session token' }, 401);
+    let requestBody;
+    try {
+      requestBody = await request.json();
+      console.log('Request body received:', requestBody);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return createAuthenticatedResponse(
+        { error: 'Invalid JSON in request body' },
+        400
+      );
     }
 
+    const { playerAddress, scoreAmount, transactionAmount, sessionToken } = requestBody;
+
+    // Session token authentication - verify the user controls the wallet
+    console.log('Session token validation - token:', sessionToken ? 'present' : 'missing', 'playerAddress:', playerAddress);
+    if (!sessionToken) {
+      console.error('Session token missing');
+      return createAuthenticatedResponse({ error: 'Unauthorized: Missing session token' }, 401);
+    }
+    
+    // Validate session token with more detailed error reporting
+    const isValidToken = validateSessionToken(sessionToken, playerAddress);
+    if (!isValidToken) {
+      console.error('Session token validation failed for playerAddress:', playerAddress);
+      return createAuthenticatedResponse({ error: 'Unauthorized: Invalid or expired session token' }, 401);
+    }
+    console.log('Session token validation successful');
+
     // Validate input
+    console.log('Input validation - playerAddress:', playerAddress, 'scoreAmount:', scoreAmount, 'transactionAmount:', transactionAmount);
     if (!playerAddress || scoreAmount === undefined || transactionAmount === undefined) {
+      console.error('Missing required fields - playerAddress:', playerAddress, 'scoreAmount:', scoreAmount, 'transactionAmount:', transactionAmount);
       return createAuthenticatedResponse(
         { error: 'Missing required fields: playerAddress, scoreAmount, transactionAmount' },
         400
@@ -43,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Validate player address format
     if (!isValidAddress(playerAddress)) {
+      console.error('Invalid player address format:', playerAddress);
       return createAuthenticatedResponse(
         { error: 'Invalid player address format' },
         400
@@ -51,6 +78,7 @@ export async function POST(request: NextRequest) {
 
     // Validate that scoreAmount and transactionAmount are positive numbers
     if (scoreAmount < 0 || transactionAmount < 0) {
+      console.error('Negative amounts - scoreAmount:', scoreAmount, 'transactionAmount:', transactionAmount);
       return createAuthenticatedResponse(
         { error: 'Score and transaction amounts must be non-negative' },
         400
@@ -66,6 +94,7 @@ export async function POST(request: NextRequest) {
     const MAX_SCORE_PER_TRANSACTION = 100000; // Max 100000 points per transaction
 
     if (scoreAmount > MAX_SCORE_PER_REQUEST || transactionAmount > MAX_TRANSACTIONS_PER_REQUEST) {
+      console.error('Amounts too large - scoreAmount:', scoreAmount, 'MAX_SCORE_PER_REQUEST:', MAX_SCORE_PER_REQUEST, 'transactionAmount:', transactionAmount, 'MAX_TRANSACTIONS_PER_REQUEST:', MAX_TRANSACTIONS_PER_REQUEST);
       return createAuthenticatedResponse(
         { error: `Amounts too large. Max score: ${MAX_SCORE_PER_REQUEST}, Max transactions: ${MAX_TRANSACTIONS_PER_REQUEST}` },
         400
@@ -73,6 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (scoreAmount < MIN_SCORE_PER_REQUEST && scoreAmount !== 0) {
+      console.error('Score amount too small - scoreAmount:', scoreAmount, 'MIN_SCORE_PER_REQUEST:', MIN_SCORE_PER_REQUEST);
       return createAuthenticatedResponse(
         { error: `Score amount too small. Minimum: ${MIN_SCORE_PER_REQUEST}` },
         400
@@ -81,6 +111,7 @@ export async function POST(request: NextRequest) {
 
     // Validate score-to-transaction ratio to prevent unrealistic scores
     if (transactionAmount > 0 && (scoreAmount / transactionAmount) > MAX_SCORE_PER_TRANSACTION) {
+      console.error('Score per transaction too high - scoreAmount:', scoreAmount, 'transactionAmount:', transactionAmount, 'ratio:', scoreAmount / transactionAmount, 'MAX_SCORE_PER_TRANSACTION:', MAX_SCORE_PER_TRANSACTION);
       return createAuthenticatedResponse(
         { error: `Score per transaction too high. Maximum: ${MAX_SCORE_PER_TRANSACTION} points per transaction` },
         400
