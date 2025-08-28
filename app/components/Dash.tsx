@@ -853,7 +853,7 @@ export default function Dash({ playerAddress }: DashProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-orange-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
-            🏭 CLICKER EMPIRE 🏭
+            🏭 CLICK EMPIRE 🏭
           </h1>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-black bg-opacity-50 p-4 rounded-lg border border-yellow-500">

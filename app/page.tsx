@@ -20,7 +20,7 @@ export default function Home() {
           {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
-              🏭 CLICKER EMPIRE 🏭
+              🏭 CLICK EMPIRE 🏭
             </h1>
             <p className="text-cyan-300 text-xl mb-8">
               Build your empire from nothing! Click, upgrade, and dominate!
