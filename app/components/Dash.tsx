@@ -1133,8 +1133,7 @@ export default function Dash({ playerAddress }: DashProps) {
               <div className="bg-gray-900 p-8 rounded-lg mb-6 border-4 border-yellow-600">
                 <div className="text-center mb-6">
                   <div className="text-8xl mb-4">🎁</div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Open Mystery Boxes!</h3>
-                  <p className="text-gray-300">Spend coins to get random items with spinning animation</p>
+                  <p className="text-gray-300">Spend coins to get random items with spinning</p>
                 </div>
                 
                 {boxOpeningState.isOpening ? (
@@ -1187,7 +1186,7 @@ export default function Dash({ playerAddress }: DashProps) {
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    🎆 Open Surprise Box<br />
+                    Open Surprise Box<br />
                     <span className="text-lg">Cost: {formatNumber(5000000)} coins</span>
                   </button>
                 </div>
@@ -1219,11 +1218,11 @@ export default function Dash({ playerAddress }: DashProps) {
 
         {/* Lucky Tab */}
         {currentTab === 'lucky' && (
-          <div className="max-w-6xl mx-auto">
+          <div>
             {/* Game Selection */}
             <div className="mb-8 text-center">
               <h2 className="text-4xl font-bold text-yellow-400 mb-6">🍀 LUCKY GAMES 🍀</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <button
                   onClick={() => setCurrentGambleGame('slots')}
                   className={`p-4 rounded-lg font-bold transition-all ${
@@ -1265,7 +1264,7 @@ export default function Dash({ playerAddress }: DashProps) {
                       : 'bg-gray-700 text-white hover:bg-gray-600 border-2 border-gray-600'
                   }`}
                 >
-                  <div className="text-3xl mb-2">🪙</div>
+                  <div className="text-3xl mb-2">⚛</div>
                   <div>Coin Flip</div>
                 </button>
               </div>
@@ -1273,9 +1272,9 @@ export default function Dash({ playerAddress }: DashProps) {
 
             {/* Slots Game */}
             {currentGambleGame === 'slots' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
                 {/* Slot Machine */}
-                <div className="lg:col-span-2 bg-black bg-opacity-60 p-8 rounded-lg border border-yellow-500">
+                <div className="xl:col-span-3 bg-black bg-opacity-60 p-8 rounded-lg border border-yellow-500">
                   <h2 className="text-4xl font-bold text-yellow-400 mb-6 text-center">🎰 LUCKY SLOTS 🎰</h2>
                   
                   {/* Slot Display */}
@@ -1368,7 +1367,7 @@ export default function Dash({ playerAddress }: DashProps) {
                 </div>
                 
                 {/* Slots Right Sidebar */}
-                <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-yellow-500">
+                <div className="xl:col-span-2 bg-black bg-opacity-50 p-6 rounded-lg border border-yellow-500">
                   <h4 className="text-xl font-bold text-yellow-400 mb-4">Payouts</h4>
                   <div className="text-sm text-gray-300 space-y-2">
                     <div className="flex justify-between">
@@ -1402,8 +1401,8 @@ export default function Dash({ playerAddress }: DashProps) {
 
             {/* Aviator Game */}
             {currentGambleGame === 'aviator' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-black bg-opacity-60 p-8 rounded-lg border border-blue-500">
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                <div className="xl:col-span-3 bg-black bg-opacity-60 p-8 rounded-lg border border-blue-500">
                   <h3 className="text-3xl font-bold text-blue-400 mb-6 text-center">✈️ AVIATOR</h3>
                   <div className="bg-gradient-to-b from-blue-900 to-blue-600 p-8 rounded-lg mb-6 border-4 border-blue-400 relative overflow-hidden">
                     <div className="text-center">
@@ -1449,7 +1448,7 @@ export default function Dash({ playerAddress }: DashProps) {
                     </button>
                   )}
                 </div>
-                <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-blue-400">
+                <div className="xl:col-span-2 bg-black bg-opacity-50 p-6 rounded-lg border border-blue-400">
                   <h4 className="text-xl font-bold text-blue-400 mb-4">How to Play</h4>
                   <div className="text-sm text-gray-300 space-y-2">
                     <p>• Place your bet before the plane takes off</p>
@@ -1463,8 +1462,8 @@ export default function Dash({ playerAddress }: DashProps) {
 
             {/* Minesweeper Game */}
             {currentGambleGame === 'minesweeper' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-black bg-opacity-60 p-8 rounded-lg border border-red-500">
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                <div className="xl:col-span-3 bg-black bg-opacity-60 p-8 rounded-lg border border-red-500">
                   <h3 className="text-3xl font-bold text-red-400 mb-6 text-center">💣 MINESWEEPER</h3>
                   {minesweeperGameActive && (
                     <div className="text-center mb-4">
@@ -1530,7 +1529,7 @@ export default function Dash({ playerAddress }: DashProps) {
                     </button>
                   )}
                 </div>
-                <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-red-400">
+                <div className="xl:col-span-2 bg-black bg-opacity-50 p-6 rounded-lg border border-red-400">
                   <h4 className="text-xl font-bold text-red-400 mb-4">How to Play</h4>
                   <div className="text-sm text-gray-300 space-y-2">
                     <p>• Choose your bet amount and start the game</p>
@@ -1545,17 +1544,23 @@ export default function Dash({ playerAddress }: DashProps) {
 
             {/* Coin Flip Game */}
             {currentGambleGame === 'coinflip' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-black bg-opacity-60 p-8 rounded-lg border border-yellow-500">
-                  <h3 className="text-3xl font-bold text-yellow-400 mb-6 text-center">🪙 COIN FLIP</h3>
-                  <div className="bg-gray-900 p-8 rounded-lg mb-6 border-4 border-yellow-400">
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                <div className="xl:col-span-3 bg-black bg-opacity-60 p-8 rounded-lg border border-yellow-500">
+                  <h3 className="text-3xl font-bold text-yellow-400 mb-6 text-center">⚛ COIN FLIP</h3>
+                  <div className={`p-8 rounded-lg mb-6 border-4 transition-all duration-500 ${
+                    coinflipResult === 'heads' && !coinflipFlipping ? 'border-blue-400 bg-gradient-to-br from-blue-900 to-blue-700' :
+                    coinflipResult === 'tails' && !coinflipFlipping ? 'border-orange-400 bg-gradient-to-br from-orange-900 to-yellow-700' :
+                    'border-yellow-400 bg-gray-900'
+                  }`}>
                     <div className="text-center">
                       <div className={`text-8xl mb-4 ${coinflipFlipping ? 'animate-spin' : ''}`}>
-                        {coinflipFlipping ? '🪙' : coinflipResult === 'heads' ? '👑' : coinflipResult === 'tails' ? '🪙' : '🪙'}
+                        {coinflipFlipping ? '⚛' : coinflipResult === 'heads' ? '👑' : coinflipResult === 'tails' ? '💰' : '⚛'}
                       </div>
                       {coinflipResult && !coinflipFlipping && (
-                        <div className="text-2xl font-bold text-white mb-2">
-                          {coinflipResult === 'heads' ? 'HEADS!' : 'TAILS!'}
+                        <div className={`text-2xl font-bold mb-2 ${
+                          coinflipResult === 'heads' ? 'text-blue-300' : 'text-orange-300'
+                        }`}>
+                          {coinflipResult === 'heads' ? '👑 HEADS! 👑' : '🪙 TAILS! 💰'}
                         </div>
                       )}
                       {coinflipResult && !coinflipFlipping && coinflipChoice && (
@@ -1580,7 +1585,7 @@ export default function Dash({ playerAddress }: DashProps) {
                       disabled={gameState.coins < selectedBet || coinflipFlipping}
                       className="py-4 px-6 rounded-lg font-bold text-xl bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white border-4 border-orange-400"
                     >
-                      🪙 Tails (2x)
+                      ⚛ Tails (2x)
                     </button>
                   </div>
                   <div className="grid grid-cols-5 gap-3 mb-6">
@@ -1606,10 +1611,10 @@ export default function Dash({ playerAddress }: DashProps) {
                     )}
                   </div>
                 </div>
-                <div className="bg-black bg-opacity-50 p-6 rounded-lg border border-yellow-400">
+                <div className="xl:col-span-2 bg-black bg-opacity-50 p-6 rounded-lg border border-yellow-400">
                   <h4 className="text-xl font-bold text-yellow-400 mb-4">How to Play</h4>
                   <div className="text-sm text-gray-300 space-y-2">
-                    <p>• Choose Heads (👑) or Tails (🪙)</p>
+                    <p>• Choose Heads (👑) or Tails (💰)</p>
                     <p>• Select your bet amount</p>
                     <p>• Win 2x your bet if you guess correctly</p>
                     <p>• 50/50 chance - pure luck!</p>
@@ -1652,7 +1657,7 @@ export default function Dash({ playerAddress }: DashProps) {
 
         {/* Story Tab */}
         {currentTab === 'story' && (
-          <div className="max-w-4xl mx-auto">
+          <div>
             <div className="bg-black bg-opacity-60 p-8 rounded-lg border border-indigo-500">
               <h2 className="text-4xl font-bold text-indigo-400 mb-6 text-center">📖 Empire Chronicles</h2>
               
@@ -1661,7 +1666,7 @@ export default function Dash({ playerAddress }: DashProps) {
                 <p className="text-gray-300 text-lg leading-relaxed">{currentStory.content}</p>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
                 {Array.from({length: 10}, (_, i) => i + 1).map(chapter => {
                   const isUnlocked = gameState.story.unlockedChapters.includes(chapter);
                   const isCurrent = gameState.story.chapter === chapter;

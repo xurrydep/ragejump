@@ -86,7 +86,7 @@ export default function Home() {
                 </h3>
                 <ul className="text-gray-300 space-y-2 text-sm">
                   <li>• 🎰 Slots: Spin for big wins</li>
-                  <li>• ✈️ Aviator: Cash out before crash</li>
+                  <li>• ✈️ Nadiator: Cash out before crash</li>
                   <li>• 💣 Minesweeper: Find safe tiles</li>
                   <li>• 🪙 Coin Flip: 50/50 chance to double</li>
                   <li>• Bet 5 to 50,000 coins!</li>
