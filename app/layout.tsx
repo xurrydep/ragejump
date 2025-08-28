@@ -16,27 +16,27 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Nadmetry Dash — The hardest game of Monad",
-    template: "%s — Nadmetry Dash",
+    default: "CLICK EMPIRE — If you enjoy building Nads, keep clicking.",
+    template: "%s — CLICK EMPIRE",
   },
   description:
-    "Jump and try to overcome the obstacles because this will be impossible.",
-  metadataBase: new URL("https://nadmetrydash.vercel.app/"),
+    "Building is a click, and the more you click, the more you succeed. Come on, let’s build!",
+  metadataBase: new URL("https://clickempire.vercel.app/"),
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
   openGraph: {
-    url: "https://nadmetrydash.vercel.app/",
-    siteName: "Nadmetry Dash",
-    title: "Nadmetry Dash — The hardest game of Monad",
+    url: "https://clickempire.vercel.app/",
+    siteName: "CLICK EMPIRE",
+    title: "CLICK EMPIRE — If you enjoy building Nads, keep clicking.",
     description:
-      "Jump and try to overcome the obstacles because this will be impossible.",
+      "Building is a click, and the more you click, the more you succeed. Come on, let’s build!",
     images: [{ url: "/og.png" }], // /public/og.png
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nadmetry Dash — The hardest game of Monad",
+    title: "CLICK EMPIRE — If you enjoy building Nads, keep clicking.",
     description:
-      "Jump and try to overcome the obstacles because this will be impossible.",
+      "Building is a click, and the more you click, the more you succeed. Come on, let’s build!",
     images: ["/og.png"], // /public/og.png
   },
 };
